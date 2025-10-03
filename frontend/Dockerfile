@@ -21,6 +21,9 @@ RUN npm run build
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
 
+# Upgrade Alpine packages (fix CVEs like libexpat)
+RUN apk upgrade --no-cache
+
 # Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
 
