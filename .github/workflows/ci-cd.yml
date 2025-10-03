@@ -86,12 +86,13 @@ jobs:
         with:
           context: frontend
           push: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}    
+          load: true   # <-- ensures image is available locally
+          tags: frontend:sha-${{ github.sha }}  
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}
+          image-ref: frontend:sha-${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -102,7 +103,7 @@ jobs:
         if: success() 
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: frontend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}     
 
@@ -192,18 +193,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN }}
 
-      - name: Build & push backend Docker image
+      - name: Build & push backend Docker image (skip push tag localy)
         uses: docker/build-push-action@v3
         with:
           context: backend
           file: backend/Dockerfile
           push: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:sha-${{ github.sha }}    
+          load: true   # <-- ensures image is available locally
+          tags: backend:sha-${{ github.sha }}    
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:sha-${{ github.sha }}
+          image-ref: frontend:sha-${{ github.sha }}   # <-- local tag, no ghcr.io
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

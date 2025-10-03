@@ -22,7 +22,7 @@ export default class Home extends Component {
                             <div class="col-md-8 align-content-center">
 
                                 <h1><span className="fa fa-lock"></span>AKHIL DEVOPS TRAINING PROJECT</h1>
-                                <h4>3-Tier Web Application deploy</h4><span className="lead font-weight-bold">GitSecOps</span>
+                                <h4>3-Tier Web Application deploy docker</h4><span className="lead font-weight-bold">GitSecOps</span>
                                 <br />
                                 <hr />
 
