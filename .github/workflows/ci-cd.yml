@@ -1,4 +1,5 @@
 name: student-portal CI/CD
+
 on:
   push:
     branches: [ main ]
@@ -12,29 +13,35 @@ on:
       - 'backend/**'
 
 jobs:
-  # ✅ Frontend test & build
-  test-frontend:
-    if: contains(github.event.head_commit.message, '[skip-frontend]') == false
+  # ✅ Detect changes in frontend/backend
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Detect frontend changes
-        id: changes
+      - id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
             frontend:
               - 'frontend/**'
+            backend:
+              - 'backend/**'
 
-      - name: Skip if no frontend changes
-        if: steps.changes.outputs.frontend != 'true'
-        run: echo "No frontend changes, skipping" && exit 0
-
+  # =========================
+  # Frontend jobs
+  # =========================
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - run: cd frontend && npm install
       - run: cd frontend && npm test -- --passWithNoTests
 
@@ -43,13 +50,19 @@ jobs:
     needs: test-frontend
     if: needs.test-frontend.result == 'success'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build frontend
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - run: cd frontend && npm install
       - run: cd frontend && NODE_OPTIONS=--openssl-legacy-provider npm run build
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: frontend/build/
@@ -65,7 +78,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download frontend build
+      - name: Download frontend build artifact
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -74,22 +87,22 @@ jobs:
       - name: setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN }}
-      
-      - name: Build & push frontend Docker image
+
+      - name: Build frontend image locally
         uses: docker/build-push-action@v3
         with:
           context: frontend
           push: false
-          load: true   # <-- ensures image is available locally
-          tags: frontend:sha-${{ github.sha }}  
+          load: true
+          tags: frontend:sha-${{ github.sha }}
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: frontend:sha-${{ github.sha }}
@@ -97,46 +110,33 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'  
-      
-      - name: push docker image
-        if: success() 
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Docker image
+        if: success()
         uses: docker/build-push-action@v3
         with:
           context: frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}     
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}
 
-      
-
-  # ✅ Backend build & docker
+  # =========================
+  # Backend jobs
+  # =========================
   test-backend:
-    if: contains(github.event.head_commit.message, '[skip-backend]') == false
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect backend changes
-        id: changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-
-      - name: Skip if no backend changes
-        if: steps.changes.outputs.backend != 'true'
-        run: echo "No backend changes, skipping" && exit 0
-
-      - name: Set up JDK
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 11
-
-      - name: Build & run tests
-        run: cd backend && mvn clean verify
+      - run: cd backend && mvn clean verify
 
   backend-build:
     runs-on: ubuntu-latest
@@ -146,22 +146,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect backend changes
-        id: changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
+      - run: cd backend && mvn -B package -DskipTests
 
-      - name: Skip if no backend changes
-        if: steps.changes.outputs.backend != 'true'
-        run: echo "No backend changes, skipping" && exit 0
-
-      - name: Build backend with Maven
-        run: cd backend && mvn -B package -DskipTests
-
-      - name: Upload backend JAR
+      - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-jar
@@ -170,6 +157,7 @@ jobs:
   docker-backend:
     runs-on: ubuntu-latest
     needs: backend-build
+    if: needs.backend-build.result == 'success'
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
@@ -177,7 +165,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download backend JAR
+      - name: Download backend JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: backend-jar
@@ -186,48 +174,48 @@ jobs:
       - name: setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN }}
 
-      - name: Build & push backend Docker image (skip push tag localy)
+      - name: Build backend image locally
         uses: docker/build-push-action@v3
         with:
           context: backend
           file: backend/Dockerfile
           push: false
-          load: true   # <-- ensures image is available locally
-          tags: backend:sha-${{ github.sha }}    
+          load: true
+          tags: backend:sha-${{ github.sha }}
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: backend:sha-${{ github.sha }}   # <-- local tag, no ghcr.io
+          image-ref: backend:sha-${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'        
-      
-      - name: push docker image
-        if: success() 
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Push Docker image
+        if: success()
         uses: docker/build-push-action@v3
         with:
           context: backend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:sha-${{ github.sha }} 
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:sha-${{ github.sha }}
 
-      
-
-  # ✅ GitOps update
+  # =========================
+  # GitOps update
+  # =========================
   gitops-update:
     runs-on: ubuntu-latest
     needs: [docker-frontend, docker-backend]
     if: |
-      (needs.docker-frontend.result == 'success') || 
+      (needs.docker-frontend.result == 'success') ||
       (needs.docker-backend.result == 'success')
     steps:
       - uses: actions/checkout@v4
@@ -235,17 +223,14 @@ jobs:
           repository: your-org/gitops-repo
           token: ${{ secrets.TOKEN }}
           ref: main
-
-      - name: Update frontend image tag
+      - name: Update frontend image
         if: needs.docker-frontend.result == 'success'
         run: |
           sed -i "s|ghcr.io/.*/frontend:.*|ghcr.io/owner/frontend:sha-${{ github.sha }}|g" k8s/frontend-deployment.yaml
-
-      - name: Update backend image tag
+      - name: Update backend image
         if: needs.docker-backend.result == 'success'
         run: |
           sed -i "s|ghcr.io/.*/backend:.*|ghcr.io/owner/backend:sha-${{ github.sha }}|g" k8s/backend-deployment.yaml
-
       - name: Commit & push changes
         run: |
           git config --global user.name "github-actions"
