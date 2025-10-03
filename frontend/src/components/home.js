@@ -21,7 +21,7 @@ export default class Home extends Component {
                             </div>
                             <div class="col-md-8 align-content-center">
 
-                                <h1><span className="fa fa-lock"></span>Cloud Computing Assignment 1</h1>
+                                <h1><span className="fa fa-lock"></span>AKHIL DEVOPS TRAINING PROJECT</h1>
                                 <h4>3-Tier Web Application deploy with</h4><span className="lead font-weight-bold">Docker</span>
                                 <br />
                                 <hr />
