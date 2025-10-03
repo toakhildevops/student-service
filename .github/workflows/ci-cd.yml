@@ -213,33 +213,45 @@ jobs:
   # =========================
   gitops-update:
     runs-on: ubuntu-latest
-    needs: [docker-frontend, docker-backend]
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
     steps:
+      # Checkout your GitOps repo
       - uses: actions/checkout@v4
         with:
-          repository: ${{ env.IMAGE_NAME }}
+          repository: your-org/gitops-repo
           token: ${{ secrets.TOKEN }}
           ref: main
 
+      # Configure Git
       - name: Configure Git
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
-      # Update frontend image if frontend Docker succeeded
+      # Detect changes in frontend/backend
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+      # Update frontend image if there were frontend changes
       - name: Update frontend image
-        if: needs.docker-frontend.result == 'success'
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           sed -i "s|ghcr.io/.*/frontend:.*|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:sha-${{ github.sha }}|g" kubernetes/frontend/deployment.yml
           git add kubernetes/frontend/deployment.yml
           git diff --cached --quiet || git commit -m "Update frontend image to sha-${{ github.sha }}"
-      
-      # Update backend image if backend Docker succeeded
+
+      # Update backend image if there were backend changes
       - name: Update backend image
-        if: needs.docker-backend.result == 'success'
+        if: steps.changes.outputs.backend == 'true'
         run: |
           sed -i "s|ghcr.io/.*/backend:.*|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:sha-${{ github.sha }}|g" kubernetes/backend/deployment.yml
           git add kubernetes/backend/deployment.yml
@@ -248,4 +260,5 @@ jobs:
       # Push all commits if any
       - name: Push changes
         run: git push origin main
+
 

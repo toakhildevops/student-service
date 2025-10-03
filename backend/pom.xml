@@ -15,7 +15,7 @@
     <artifactId>student-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>student-service</name>
-    <description>Devops Demo Project akhil</description>
+    <description>Devops Demo Project</description>
 
     <properties>
         <java.version>11</java.version>
