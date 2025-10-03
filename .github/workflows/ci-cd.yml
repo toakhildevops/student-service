@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: 20
       - run: cd frontend && npm install
-      - run: cd frontend && npm run build
+      - run: cd frontend && NODE_OPTIONS=--openssl-legacy-provider npm run build
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-build
