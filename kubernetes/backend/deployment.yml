@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io//backend
+          image: ghcr.io/toakhildevops/student-service/backend:sha-83e5c333af989ff51b79233f3cf528bbecdec283
           ports:
             - containerPort: 8080
           env:
