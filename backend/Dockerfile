@@ -19,6 +19,9 @@ FROM eclipse-temurin:11-jre-alpine
 
 WORKDIR /app
 
+# 🔐 Upgrade Alpine packages to fix CVEs (e.g. libexpat, musl)
+RUN apk upgrade --no-cache
+
 # Copy the JAR from the build stage
 COPY --from=build /app/target/student-service-docker.jar app.jar
 
