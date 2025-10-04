@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: springboot-backend
-          image: ghcr.io/toakhildevops/student-service/backend:sha-8e171e3a8bd032fbceaa2b9409fb12e08f40c9d1
+          image: ghcr.io/toakhildevops/student-service/backend:sha-90ffbebc0bb59675d82fa8afbfb8ef77d2bfdb7d
           ports:
             - containerPort: 8080
       imagePullSecrets:
