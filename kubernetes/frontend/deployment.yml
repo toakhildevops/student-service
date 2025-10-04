@@ -1,24 +1,27 @@
+---
+# ===========================================
+# React Frontend Deployment
+# ===========================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment
-  labels:
-    app: frontend
+  name: react-frontend
+  namespace: student-service
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: frontend
+      app: react-frontend
   template:
     metadata:
       labels:
-        app: frontend
+        app: react-frontend
     spec:
       containers:
-        - name: frontend
+        - name: react-frontend
           image: ghcr.io/toakhildevops/student-service/frontend:sha-686a6e02446bed6db149e1719bd1777ec52ec326
           ports:
             - containerPort: 80
           env:
-            - name: REACT_APP_BACKEND_URL
-              value: "http://backend-service:8080"
+            - name: CHOKIDAR_USEPOLLING
+              value: "true"

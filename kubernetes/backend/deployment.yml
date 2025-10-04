@@ -1,24 +1,31 @@
+---
+# ===========================================
+# Spring Boot Backend Deployment
+# ===========================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
-  labels:
-    app: backend
+  name: springboot-backend
+  namespace: student-service
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: backend
+      app: springboot-backend
   template:
     metadata:
       labels:
-        app: backend
+        app: springboot-backend
     spec:
       containers:
-        - name: backend
+        - name: springboot-backend
           image: ghcr.io/toakhildevops/student-service/backend:sha-83e5c333af989ff51b79233f3cf528bbecdec283
           ports:
             - containerPort: 8080
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
+          envFrom:
+            - configMapRef:
+                name: student-service-config
+            - secretRef:
+                name: student-service-secret
+          
+        

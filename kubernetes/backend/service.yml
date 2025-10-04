@@ -1,0 +1,17 @@
+---
+# ===========================================
+# Backend Service (internal)
+# ===========================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-backend
+  namespace: student-service
+spec:
+  selector:
+    app: springboot-backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

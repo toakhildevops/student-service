@@ -1,0 +1,12 @@
+---
+# ===========================================
+# ConfigMap for Spring Boot Backend
+# ===========================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: student-service-config
+  namespace: student-service
+data:
+  SPRING_APPLICATION_NAME: student-service
+  SPRING_PROFILES_ACTIVE: default

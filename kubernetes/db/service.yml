@@ -1,17 +1,17 @@
 ---
 # ===========================================
-# Frontend Service (internal)
+# MongoDB Service (internal only)
 # ===========================================
 apiVersion: v1
 kind: Service
 metadata:
-  name: react-frontend
+  name: mongodb
   namespace: student-service
 spec:
   selector:
-    app: react-frontend
+    app: mongodb
   ports:
-    - port: 80
-      targetPort: 80
+    - port: 27017
+      targetPort: 27017
       protocol: TCP
   type: ClusterIP
