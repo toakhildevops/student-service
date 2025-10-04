@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: react-frontend
-          image: ghcr.io/toakhildevops/student-service/frontend:sha-686a6e02446bed6db149e1719bd1777ec52ec326
+          image: ghcr.io/toakhildevops/student-service/frontend:sha-9ed903ec2c39578be2977384207bb803db2570f3
           ports:
             - containerPort: 80
           env:
