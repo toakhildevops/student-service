@@ -27,11 +27,20 @@ spec:
                 name: mongodb-secret
           volumeMounts:
             - mountPath: /data/db
-              name: dbvol
+              name: mongodb
+            - mountPath: /data/configdb
+              name: mongodb_config
       volumes:
-        - name: dbvol
+        - name: mongodb
           hostPath:
           # directory location on host
           path: /data
           # this field is optional
           type: DirectoryOrCreate
+
+        - name: mongodb_config
+          hostPath:
+          # directory location on host
+          path: /data
+          # this field is optional
+          type: DirectoryOrCreate  
