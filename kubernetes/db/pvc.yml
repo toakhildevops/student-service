@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 3Gi
-  storageClassName: default 
+  storageClassName: default # Adjust based on your cluster's storage class
