@@ -22,6 +22,8 @@ spec:
           image: ghcr.io/toakhildevops/student-service/frontend:sha-9ed903ec2c39578be2977384207bb803db2570f3
           ports:
             - containerPort: 80
+      imagePullSecrets:
+        - name: github-container-registry  
           env:
             - name: CHOKIDAR_USEPOLLING
               value: "true"
